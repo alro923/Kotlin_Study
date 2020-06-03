@@ -1,13 +1,15 @@
 package com.uhhyunjoo.cloneinsta
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.MenuItem
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.uhhyunjoo.cloneinsta.navigation.AlarmFragment
-import com.uhhyunjoo.cloneinsta.navigation.DetailViewFragment
-import com.uhhyunjoo.cloneinsta.navigation.GridFragment
-import com.uhhyunjoo.cloneinsta.navigation.UserFragment
+import com.uhhyunjoo.cloneinsta.navigation.*
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener {
@@ -16,6 +18,7 @@ class MainActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemS
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         bottom_navigation.setOnNavigationItemSelectedListener(this)
+        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), 1)
     }
 
     override fun onNavigationItemSelected(p0: MenuItem): Boolean {
@@ -33,7 +36,9 @@ class MainActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemS
                 return true
             }
             R.id.action_add_photo -> {
-
+                if(ContextCompat.checkSelfPermission(this,Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED){
+                    startActivity(Intent(this, AddPhotoActivity::class.java))
+                }
                 return true
             }
             R.id.action_favorite_alarm -> {
