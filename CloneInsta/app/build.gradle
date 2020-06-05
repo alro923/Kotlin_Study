@@ -44,6 +44,5 @@ dependencies {
     implementation 'com.facebook.android:facebook-android-sdk:[4,5)'
     implementation 'com.android.support:multidex:1.0.3'
     implementation 'com.github.bumptech.glide:glide:4.11.0'
-    implementation 'com.androidx.support:recyclerview-v7:25.3.1'
     implementation 'androidx.recyclerview:recyclerview:1.2.0-alpha03'
 }
