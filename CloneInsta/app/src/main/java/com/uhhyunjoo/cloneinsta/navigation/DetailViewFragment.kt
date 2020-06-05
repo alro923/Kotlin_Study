@@ -13,7 +13,7 @@ import com.uhhyunjoo.cloneinsta.R
 import com.uhhyunjoo.cloneinsta.navigation.model.ContentDTO
 import kotlinx.android.synthetic.main.fragment_detail.view.*
 import kotlinx.android.synthetic.main.item_detail.view.*
-// import kotlinx.android.synthetic.main.tabs.* -- can't import
+
 
 class DetailViewFragment :Fragment(){
     var firestore : FirebaseFirestore? = null
@@ -25,7 +25,6 @@ class DetailViewFragment :Fragment(){
     ): View? {
         var view = LayoutInflater.from(activity).inflate(R.layout.fragment_detail, container, false)
         firestore = FirebaseFirestore.getInstance()
-
         view.detailviewfragment_recyclerview.adapter = DetailViewRecyclerViewAdapter()
         view.detailviewfragment_recyclerview.layoutManager = LinearLayoutManager(activity)
         return view
