@@ -3,10 +3,12 @@ package com.uhhyunjoo.cloneinsta
 import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Base64
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.FragmentActivity
 import com.facebook.AccessToken
@@ -61,9 +63,10 @@ class LoginActivity : AppCompatActivity() {
     }
 
     // V7GporT4LY7mkELSsExzU5ULrVQ=
+    @RequiresApi(Build.VERSION_CODES.P)
     fun printHashKey() {
         try {
-            val info : PackageInfo = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
+            val info : PackageInfo = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES)
             for (signature in info.signatures) {
                 val md: MessageDigest = MessageDigest.getInstance("SHA")
                 md.update(signature.toByteArray())
@@ -76,6 +79,7 @@ class LoginActivity : AppCompatActivity() {
             Log.e("TAG", "printHashKey()", e)
         }
     }
+
 
     fun googleLogin(){
         var signInIntent = googleSignInClient?.signInIntent
