@@ -67,6 +67,18 @@ class LoginActivity : AppCompatActivity() {
     fun printHashKey() {
         try {
             val info : PackageInfo = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+
+            val signatures = with(packageManager) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+                        .signingInfo
+                        .apkContentsSigners
+                } else {
+                    getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
+                        .signatures
+                }
+            }
+
             for (signature in info.signatures) {
                 val md: MessageDigest = MessageDigest.getInstance("SHA")
                 md.update(signature.toByteArray())
