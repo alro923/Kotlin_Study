@@ -61,7 +61,10 @@ class LoginActivity : AppCompatActivity() {
         // printHashKey()
         callbackManager = CallbackManager.Factory.create()
     }
-
+    override fun onStart(){
+        super.onStart()
+        moveMainPage(auth?.currentUser)
+    }
     // V7GporT4LY7mkELSsExzU5ULrVQ=
     @RequiresApi(Build.VERSION_CODES.P)
     fun printHashKey() {
@@ -193,6 +196,7 @@ class LoginActivity : AppCompatActivity() {
     fun moveMainPage(user: FirebaseUser?){
         if(user != null){
             startActivity(Intent(this, MainActivity::class.java))
+            finish()
         }
     }
 }
