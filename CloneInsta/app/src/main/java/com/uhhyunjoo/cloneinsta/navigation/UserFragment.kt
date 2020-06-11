@@ -187,7 +187,7 @@ class UserFragment :Fragment(){
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             var imageview = (holder as CustomViewHolder).imageview
-            Glide.with(holder.itemView.context).load(contentDTOs[position]).apply(RequestOptions().centerCrop()).into(imageview)
+            Glide.with(holder.itemView.context).load(contentDTOs[position].imageUrl).apply(RequestOptions().centerCrop()).into(imageview)
         }
 
 
