@@ -19,6 +19,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.uhhyunjoo.cloneinsta.LoginActivity
 import com.uhhyunjoo.cloneinsta.MainActivity
 import com.uhhyunjoo.cloneinsta.R
+import com.uhhyunjoo.cloneinsta.navigation.model.AlarmDTO
 import com.uhhyunjoo.cloneinsta.navigation.model.ContentDTO
 import com.uhhyunjoo.cloneinsta.navigation.model.FollowDTO
 import kotlinx.android.synthetic.main.activity_main.*
@@ -130,7 +131,7 @@ class UserFragment :Fragment(){
                 followDTO = FollowDTO()
                 followDTO!!.followerCount = 1
                 followDTO!!.followers[currentUserId!!] = true
-
+                followerAlarm(uid!!)
                 transaction.set(tsDocFollower,followDTO!!)
                 return@runTransaction
             }
@@ -140,10 +141,20 @@ class UserFragment :Fragment(){
             }else{
                 followDTO!!.followerCount = followDTO!!.followerCount +1
                 followDTO!!.followers[currentUserId!!] = true
+                followerAlarm(uid!!)
             }
             transaction.set(tsDocFollower,followDTO!!)
             return@runTransaction
         }
+    }
+    fun followerAlarm(destinationUid : String){
+        var alarmDTO = AlarmDTO()
+        alarmDTO.destinationUid = destinationUid
+        alarmDTO.userId = auth?.currentUser?.email
+        alarmDTO.uid = auth?.currentUser?.uid
+        alarmDTO.kind = 2
+        alarmDTO.timestamp = System.currentTimeMillis()
+        FirebaseFirestore.getInstance().collection("alarms").document().set(alarmDTO)
     }
     fun getProfileImage(){
         firestore?.collection("profileImages")?.document(uid!!)?.addSnapshotListener{documentSnapshot, firebaseFirestoreException ->
