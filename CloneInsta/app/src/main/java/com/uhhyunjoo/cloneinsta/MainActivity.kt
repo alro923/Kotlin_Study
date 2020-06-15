@@ -33,10 +33,7 @@ class MainActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemS
         bottom_navigation.selectedItemId = R.id.action_home
         registerPushToken()
     }
-    override fun onStop(){
-        super.onStop()
-        FcmPush.instance.sendMessage("Y7ZGCrbodDYdZkjCuRdc2MHRT0i2", "hi", "bye")
-    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 

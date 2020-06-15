@@ -14,6 +14,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.uhhyunjoo.cloneinsta.R
 import com.uhhyunjoo.cloneinsta.navigation.model.AlarmDTO
 import com.uhhyunjoo.cloneinsta.navigation.model.ContentDTO
+import com.uhhyunjoo.cloneinsta.navigation.util.FcmPush
 import kotlinx.android.synthetic.main.fragment_detail.view.*
 import kotlinx.android.synthetic.main.item_detail.view.*
 
@@ -138,6 +139,9 @@ class  DetailViewFragment :Fragment(){
             alarmDTO.kind = 0
             alarmDTO.timestamp = System.currentTimeMillis()
             FirebaseFirestore.getInstance().collection("alarms").document().set(alarmDTO)
+
+            var message = FirebaseAuth.getInstance()?.currentUser?.email + getString(R.string.alarm_favorite)
+            FcmPush.instance.sendMessage(destinationUid, "Uhhyunjoostagram", message)
         }
 
     }
