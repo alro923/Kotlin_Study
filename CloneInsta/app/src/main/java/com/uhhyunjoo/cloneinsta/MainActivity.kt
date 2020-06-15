@@ -18,6 +18,7 @@ import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.UploadTask
 import com.uhhyunjoo.cloneinsta.navigation.*
+import com.uhhyunjoo.cloneinsta.navigation.util.FcmPush
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener {
@@ -32,7 +33,10 @@ class MainActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemS
         bottom_navigation.selectedItemId = R.id.action_home
         registerPushToken()
     }
-
+    override fun onStop(){
+        super.onStop()
+        FcmPush.instance.sendMessage("Y7ZGCrbodDYdZkjCuRdc2MHRT0i2", "hi", "bye")
+    }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
