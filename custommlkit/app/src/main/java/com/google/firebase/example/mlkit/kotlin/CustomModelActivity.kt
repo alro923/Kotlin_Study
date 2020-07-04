@@ -31,7 +31,7 @@ class CustomModelActivity : AppCompatActivity() {
 
     private fun configureHostedModelSource() {
         // [START mlkit_cloud_model_source]
-        val remoteModel = FirebaseCustomRemoteModel.Builder("your_model").build()
+        val remoteModel = FirebaseCustomRemoteModel.Builder("foodClassifier").build()
         // [END mlkit_cloud_model_source]
     }
 
@@ -50,7 +50,7 @@ class CustomModelActivity : AppCompatActivity() {
     private fun configureLocalModelSource() {
         // [START mlkit_local_model_source]
         val localModel = FirebaseCustomLocalModel.Builder()
-                .setAssetFilePath("your_model.tflite")
+                .setAssetFilePath("model.tflite")
                 .build()
         // [END mlkit_local_model_source]
     }

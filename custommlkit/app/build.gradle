@@ -23,6 +23,10 @@ android {
         exclude 'META-INF/androidx.exifinterface_exifinterface.version'
         exclude 'META-INF/proguard/androidx-annotations.pro'
     }
+
+    aaptOptions {
+        noCompress "tflite"  // Your model's file extension: "tflite", "lite", etc.
+    }
 }
 
 dependencies {
