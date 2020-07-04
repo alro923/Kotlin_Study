@@ -31,15 +31,19 @@ import java.nio.channels.FileChannel
 
 // 이게 진짜임
 class MainActivity : AppCompatActivity() {
-    // private val yourInputImage: Bitmap get() = Bitmap.createBitmap(0, 0, Bitmap.Config.ALPHA_8)
-    private val picPath: String? = "test_pizza.jpeg"
-    private val picBitmap = BitmapFactory.decodeFile(picPath)
-    private val yourInputImage = picBitmap
+
+
+     // private val picPath: String? = "sample.jpeg"
+     // private val picBitmap = BitmapFactory.decodeFile("src/main/assets/sample.jpeg")
+     // private val yourInputImage = picBitmap
+    private val yourInputImage: Bitmap get() = Bitmap.createBitmap(0, 0, Bitmap.Config.ALPHA_8)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
+
+
 
         // 결과값 출력하는 TextView
         val tv_output = findViewById<TextView>(R.id.tv_output)
@@ -56,8 +60,10 @@ class MainActivity : AppCompatActivity() {
 
         // model.tflite 모델 사용하는 onClick
         findViewById<View>(R.id.button_2).setOnClickListener {
+            // Get the bitmap from assets and display into image view
+            val inputbitmap = assetsToBitmap("sample.jpeg")
 
-            val bitmap = Bitmap.createScaledBitmap(yourInputImage, 224, 224, true)
+            val bitmap = Bitmap.createScaledBitmap(inputbitmap!!, 224, 224, true)
             val batchNum = 0
             val input = Array(1) { Array(224) { Array(224) { FloatArray(3) } } }
             val output = intArrayOf(0)
@@ -94,6 +100,17 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    // Method to get a bitmap from assets
+    private fun assetsToBitmap(fileName:String):Bitmap?{
+        return try{
+            val stream = assets.open(fileName)
+            BitmapFactory.decodeStream(stream)
+        }catch (e:IOException){
+            e.printStackTrace()
+            null
+        }
+    }
+
 
     // from simple model
     // 모델 파일 인터프리터를 생성하는 공통 함수
@@ -119,7 +136,7 @@ class MainActivity : AppCompatActivity() {
         return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
     }
 
-
+    // 여기 밑에꺼는 안쓴거임 파이어베이스 연결할때 쓰려고 냅둔거임!
     // initial
     fun buildCloudVisionOptions() {
         // [START ml_build_cloud_vision_options]
@@ -229,6 +246,7 @@ class MainActivity : AppCompatActivity() {
         return inputOutputOptions
     }
 
+    // 이거 위에 가져가서 썼음
     private fun bitmapToInputArray(): Array<Array<Array<FloatArray>>> {
         // [START mlkit_bitmap_input]
         val bitmap = Bitmap.createScaledBitmap(yourInputImage, 224, 224, true)
