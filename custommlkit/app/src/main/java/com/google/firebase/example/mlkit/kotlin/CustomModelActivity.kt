@@ -24,6 +24,7 @@ import java.io.InputStreamReader
 
 class CustomModelActivity : AppCompatActivity() {
 
+
     // This method is just for show
     private
     val yourInputImage: Bitmap
