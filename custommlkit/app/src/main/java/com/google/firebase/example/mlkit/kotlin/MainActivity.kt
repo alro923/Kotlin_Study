@@ -62,11 +62,11 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.button_2).setOnClickListener {
             // Get the bitmap from assets and display into image view
             val inputbitmap = assetsToBitmap("sample.jpeg")
-
             val bitmap = Bitmap.createScaledBitmap(inputbitmap!!, 224, 224, true)
             val batchNum = 0
             val input = Array(1) { Array(224) { Array(224) { FloatArray(3) } } }
-            val output = intArrayOf(0)
+            val output = Array(1){FloatArray(5)}
+            // val output = floatArrayOf(0F)
 
             //model.tflite
             // [  1 224 224   3]
@@ -90,8 +90,8 @@ class MainActivity : AppCompatActivity() {
             classifiertflite.run(input, output)
 
             tv_output.text = output.toString()
-            Log.d("EA" , "input is : ${input.toString()}")
-            Log.d("EA" , "output is : ${output.toString()}")
+            Log.d("EA" , "input is : $input")
+            Log.d("EA" , "output is : $output")
         }
 
 
