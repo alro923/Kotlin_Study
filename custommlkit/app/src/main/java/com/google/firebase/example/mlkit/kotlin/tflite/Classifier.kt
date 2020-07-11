@@ -23,7 +23,7 @@ import java.util.*
 import java.util.logging.Logger
 
 /** A classifier specialized to label images using TensorFlow Lite.  */
-abstract class Classifier protected constructor(activity: Activity?, device: Device?, numThreads: Int) {
+abstract class Classifier constructor(activity: Activity?, device: Device?, numThreads: Int) {
     /** The runtime device type used for executing classification.  */
     enum class Device {
         CPU, GPU

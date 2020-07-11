@@ -1,5 +1,6 @@
 package com.google.firebase.example.mlkit.kotlin.env
 
+import android.annotation.SuppressLint
 import android.util.Log
 import java.util.*
 
@@ -27,7 +28,7 @@ class Logger @JvmOverloads constructor(private val tag: String = DEFAULT_TAG, me
          * @return caller's simple name
          */
         private val callerSimpleName: String
-            private get() {
+            get() {
                 // Get the current callstack so we can pull the class of the caller off of it.
                 val stackTrace = Thread.currentThread().stackTrace
                 for (elem in stackTrace) {
@@ -57,7 +58,13 @@ class Logger @JvmOverloads constructor(private val tag: String = DEFAULT_TAG, me
      *
      * @param clazz the simple name of this class is used as the message prefix.
      */
-    constructor(clazz: Class<*>) : this(clazz.simpleName) {}
+    open fun Logger(clazz: Class<*>): Unit {
+        this(clazz.simpleName)
+    }
+
+    private operator fun invoke(simpleName: String) {
+
+    }
 
     /**
      * Creates a Logger using the specified message prefix.
@@ -83,63 +90,73 @@ class Logger @JvmOverloads constructor(private val tag: String = DEFAULT_TAG, me
         return messagePrefix + if (args.size > 0) String.format(format, *args) else format
     }
 
+    @SuppressLint("LogTagMismatch")
     fun v(format: String, vararg args: Any?) {
         if (isLoggable(Log.VERBOSE)) {
-            Log.v(tag, toMessage(format, *args))
+            Log.v(tag, toMessage(format, *args as Array<out Any>))
         }
     }
 
+    @SuppressLint("LogTagMismatch")
     fun v(t: Throwable?, format: String, vararg args: Any?) {
         if (isLoggable(Log.VERBOSE)) {
-            Log.v(tag, toMessage(format, *args), t)
+            Log.v(tag, toMessage(format, *args as Array<out Any>), t)
         }
     }
 
+    @SuppressLint("LogTagMismatch")
     fun d(format: String, vararg args: Any?) {
         if (isLoggable(Log.DEBUG)) {
-            Log.d(tag, toMessage(format, *args))
+            Log.d(tag, toMessage(format, *args as Array<out Any>))
         }
     }
 
+    @SuppressLint("LogTagMismatch")
     fun d(t: Throwable?, format: String, vararg args: Any?) {
         if (isLoggable(Log.DEBUG)) {
-            Log.d(tag, toMessage(format, *args), t)
+            Log.d(tag, toMessage(format, *args as Array<out Any>), t)
         }
     }
 
+    @SuppressLint("LogTagMismatch")
     fun i(format: String, vararg args: Any?) {
         if (isLoggable(Log.INFO)) {
-            Log.i(tag, toMessage(format, *args))
+            Log.i(tag, toMessage(format, *args as Array<out Any>))
         }
     }
 
+    @SuppressLint("LogTagMismatch")
     fun i(t: Throwable?, format: String, vararg args: Any?) {
         if (isLoggable(Log.INFO)) {
-            Log.i(tag, toMessage(format, *args), t)
+            Log.i(tag, toMessage(format, *args as Array<out Any>), t)
         }
     }
 
+    @SuppressLint("LogTagMismatch")
     fun w(format: String, vararg args: Any?) {
         if (isLoggable(Log.WARN)) {
-            Log.w(tag, toMessage(format, *args))
+            Log.w(tag, toMessage(format, *args as Array<out Any>))
         }
     }
 
+    @SuppressLint("LogTagMismatch")
     fun w(t: Throwable?, format: String, vararg args: Any?) {
         if (isLoggable(Log.WARN)) {
-            Log.w(tag, toMessage(format, *args), t)
+            Log.w(tag, toMessage(format, *args as Array<out Any>), t)
         }
     }
 
+    @SuppressLint("LogTagMismatch")
     fun e(format: String, vararg args: Any?) {
         if (isLoggable(Log.ERROR)) {
-            Log.e(tag, toMessage(format, *args))
+            Log.e(tag, toMessage(format, *args as Array<out Any>))
         }
     }
 
+    @SuppressLint("LogTagMismatch")
     fun e(t: Throwable?, format: String, vararg args: Any?) {
         if (isLoggable(Log.ERROR)) {
-            Log.e(tag, toMessage(format, *args), t)
+            Log.e(tag, toMessage(format, *args as Array<out Any>), t)
         }
     }
     /**

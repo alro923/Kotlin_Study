@@ -11,7 +11,7 @@ object ImageUtils {
     // This value is 2 ^ 18 - 1, and is used to clamp the RGB values before their ranges
     // are normalized to eight bits.
     const val kMaxChannelValue = 262143
-    private val LOGGER: Logger = Logger()
+    private val LOGGER: com.google.firebase.example.mlkit.kotlin.env.Logger = Logger()
 
     /**
      * Utility method to compute the allocated size in bytes of a YUV420SP image of the given
