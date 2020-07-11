@@ -79,10 +79,8 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode != FROM_ALBUM || resultCode != RESULT_OK)
             return
-        // 앨범인 경우만 처리할게
+        // 일단 앨범인 경우만 처리
         try {
-
-
             val stream = data?.data?.let { contentResolver.openInputStream(it) }
             val bitmapInput = BitmapFactory.decodeStream(stream)
             if (stream != null) {
