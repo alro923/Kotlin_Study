@@ -39,76 +39,82 @@ class MainActivity : AppCompatActivity() {
     var FROM_ALBUM = 1    // onActivityResult 식별자
     var FROM_CAMERA = 2   // 카메라는 사용 안함
 
-    // private val yourInputImage: Bitmap get() = Bitmap.createBitmap(0, 0, Bitmap.Config.ALPHA_8)
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
 
         // Get the bitmap from assets and display into image view
-        val bitmap = assetsToBitmap("sample.jpeg")
-        // If bitmap is not null
-        bitmap?.let {
-            imageView.setImageBitmap(bitmap)
+        var initialBitmap = assetsToBitmap("sample.jpeg")
+
+        initialBitmap?.let {
+            // initialBitmap 이 null 이 아닌 경우에만 실행함
+            imageView.setImageBitmap(initialBitmap)
         }
-
-
-        // 결과값 출력하는 TextView
-        val tv_output = findViewById<TextView>(R.id.textView)
+        // 걍 가져와서 보여줌
 
         // simple_1.tflite 모델 사용하는 onClick, 잘된다!
-        findViewById<View>(R.id.button_1).setOnClickListener {
+        button_1.setOnClickListener {
             val input = intArrayOf(3)
             val output = intArrayOf(0)
+            val tflite: Interpreter = getTfliteInterpreter("simple_1.tflite")!! // !!는 어설션 연산자. 이게 null일 리 없다는 뜻
 
-            val tflite: Interpreter = getTfliteInterpreter("simple_1.tflite")!!
             tflite.run(input, output)
-            tv_output.text = output[0].toString()
+            textView.text = output[0].toString()
+
         }
 
+        // Intent의 결과는 onActivityResult 함수에서 수신한다.
+        // 여러 개의 인텐트를 동시에 사용하니까, FROM_ALBUM 같은 숫자로 결과 식별함
         button_2.setOnClickListener {
             val intent = Intent()
             intent.type = "image/*"
             intent.action = Intent.ACTION_GET_CONTENT
             startActivityForResult(intent, FROM_ALBUM)
-        }
-
-        findViewById<View>(R.id.button_3).setOnClickListener {
-
-            if(bitmap!=null){
-                // Save the bitmap to a file and display it into image view
-                val uri = bitmapToFile(bitmap)
-                imageView.setImageURI(uri)
-
-                // Display the saved bitmap's uri in text view
-                textView.text = uri.toString()
-
-                // Show a toast message
-                toast("Bitmap saved in a file.")
-            }else{
-                toast("bitmap not found.")
-            }
 
         }
-
     }
     override fun onActivityResult(requestCode : Int, resultCode : Int, data : Intent?) {
+
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode != FROM_ALBUM || resultCode != RESULT_OK)
             return
-
+        // 앨범인 경우만 처리할게
         try {
-            // 선택한 이미지에서 비트맵 생성
-            // var stream = ByteArrayInputStream()
-            val stream = data?.data?.let { contentResolver.openInputStream(it) }
-            val bmp = BitmapFactory.decodeStream(stream)
 
+
+            val stream = data?.data?.let { contentResolver.openInputStream(it) }
+            val bitmapInput = BitmapFactory.decodeStream(stream)
             if (stream != null) {
                 stream.close()
             }
 
-            imageView.setImageBitmap(bmp)
+            val inputbitmap = assetsToBitmap("sample.jpeg")
+
+            val bitmap = Bitmap.createScaledBitmap(inputbitmap!!, 224, 224, true)
+            val batchNum = 0
+            val input = Array(1) { Array(224) { Array(224) { FloatArray(3) } } }
+            val output = Array(1){FloatArray(5)}
+            // val output = floatArrayOf(0F)
+
+            //model.tflite
+            // [  1 224 224   3]
+            // <class 'numpy.float32'>
+            // [1 5]
+            // <class 'numpy.float32'>
+            for (x in 0..223) {
+                for (y in 0..223) {
+                    val pixel = bitmap.getPixel(x, y)
+                    // Normalize channel values to [-1.0, 1.0]. This requirement varies by
+                    // model. For example, some models might require values to be normalized
+                    // to the range [0.0, 1.0] instead.
+                    input[batchNum][x][y][0] = (Color.red(pixel) - 127) / 255.0f
+                    input[batchNum][x][y][1] = (Color.green(pixel) - 127) / 255.0f
+                    input[batchNum][x][y][2] = (Color.blue(pixel) - 127) / 255.0f
+                }
+            }
+
+
 
         }
         catch (e:IOException){
@@ -161,6 +167,7 @@ class MainActivity : AppCompatActivity() {
         }
         return null
     }
+
     // MappedByteBuffer 바이트 버퍼를 Interpreter 객체에 전달하면 모델 해석을 할 수 있다.
     // tensorflow lite 홈페이지 참고
     @Throws(IOException::class)
