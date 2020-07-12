@@ -1,0 +1,58 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+// apply plugin: 'com.google.gms.google-services'
+// assert file(project.ext.ASSET_DIR + "/model.tflite").exists()
+// assert file(project.ext.ASSET_DIR + "/labels.txt").exists()
+
+android {
+    compileSdkVersion 30
+
+    defaultConfig {
+        applicationId "com.google.firebase.example.mlkit"
+        minSdkVersion 21
+        targetSdkVersion 30
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    packagingOptions {
+        exclude 'META-INF/androidx.exifinterface_exifinterface.version'
+        exclude 'META-INF/proguard/androidx-annotations.pro'
+    }
+
+    aaptOptions {
+        noCompress "tflite"  // Your model's file extension: "tflite", "lite", etc.
+    }
+}
+
+dependencies {
+//    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+//    implementation 'androidx.appcompat:appcompat:1.1.0'
+//    implementation 'androidx.exifinterface:exifinterface:1.2.0'
+//    implementation "com.google.firebase:firebase-ml-common:22.1.1"
+//    implementation "com.google.firebase:firebase-ml-model-interpreter:22.0.3"
+//    implementation "com.google.firebase:firebase-ml-vision:24.0.3"
+//    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.72"
+//    implementation 'com.google.firebase:firebase-ml-vision-image-label-model:20.0.1'
+    // implementation 'org.tensorflow:tensorflow-lite-local:0.0.0'
+
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation 'androidx.coordinatorlayout:coordinatorlayout:1.0.0'
+    implementation 'com.google.android.material:material:1.0.0'
+
+    // Build off of nightly TensorFlow Lite
+    implementation('org.tensorflow:tensorflow-lite:0.0.0-nightly') { changing = true }
+    implementation('org.tensorflow:tensorflow-lite-gpu:0.0.0-nightly') { changing = true }
+    implementation('org.tensorflow:tensorflow-lite-support:0.0.0-nightly') { changing = true }
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+}
+
+

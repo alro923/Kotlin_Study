@@ -406,7 +406,7 @@ abstract class CameraActivity : AppCompatActivity(), OnImageAvailableListener, P
             val recognition: Classifier.Recognition? = results[0]
             if (recognition != null) {
                 if (recognition.getTitle() != null) recognitionTextView?.setText(recognition.getTitle())
-                if (recognition.getConfidence() != null) recognitionValueTextView!!.text = java.lang.String.format("%.2f", 100 * recognition.getConfidence()).toString() + "%"
+                recognitionValueTextView!!.text = java.lang.String.format("%.2f", 100 * recognition.getConfidence()).toString() + "%"
             }
             val recognition1: Classifier.Recognition? = results[1]
             if (recognition1 != null) {
