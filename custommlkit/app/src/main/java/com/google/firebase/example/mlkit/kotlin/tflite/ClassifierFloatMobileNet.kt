@@ -1,7 +1,6 @@
 package com.google.firebase.example.mlkit.kotlin.tflite
 
 import android.app.Activity
-import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.support.common.TensorOperator
 import org.tensorflow.lite.support.common.ops.NormalizeOp
 
@@ -14,17 +13,21 @@ class ClassifierFloatMobileNet
  * @param activity
  */
 (activity: Activity?, device: Device?, numThreads: Int) : Classifier(activity, device, numThreads) {
-    override val modelPath: String
-        protected get() = "model.tflite"
+    override fun getModelPath(): String {
+        return "model.tflite"
+    }
 
-    override val labelPath: String
-        protected get() = "labels.txt"
+    override fun getLabelPath(): String {
+        return "labels.txt"
+    }
 
-    override val preprocessNormalizeOp: TensorOperator
-        protected get() = NormalizeOp(IMAGE_MEAN, IMAGE_STD)
+    override fun getPreprocessNormalizeOp(): TensorOperator {
+        return NormalizeOp(IMAGE_MEAN, IMAGE_STD)
+    }
 
-    override val postprocessNormalizeOp: TensorOperator
-        protected get() = NormalizeOp(PROBABILITY_MEAN, PROBABILITY_STD)
+    override fun getPostprocessNormalizeOp(): TensorOperator {
+        return NormalizeOp(PROBABILITY_MEAN, PROBABILITY_STD)
+    }
 
     companion object {
         /** Float MobileNet requires additional normalization of the used input.  */

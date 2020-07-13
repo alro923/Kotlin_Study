@@ -2,8 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Desktop-custommlkit.iml" filepath="$PROJECT_DIR$/.idea/modules/Desktop-custommlkit.iml" group="custommlkit" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/app.iml" group="custommlkit/app" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/custommlkit.iml" filepath="$PROJECT_DIR$/.idea/modules/custommlkit.iml" group="custommlkit" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/custommlkit-app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/custommlkit-app.iml" group="custommlkit/app" />
     </modules>
   </component>
 </project>
