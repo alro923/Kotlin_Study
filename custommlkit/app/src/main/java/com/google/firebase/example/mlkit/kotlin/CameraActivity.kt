@@ -23,7 +23,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.firebase.example.mlkit.kotlin.env.ImageUtils.convertYUV420SPToARGB8888
 import com.google.firebase.example.mlkit.kotlin.env.ImageUtils.convertYUV420ToARGB8888
 import com.google.firebase.example.mlkit.kotlin.tflite.Classifier
-import devrel.firebase.google.com.firebaseoptions.R
+import org.tensorflow.lite.examples.classification.R
 import java.lang.String
 import java.nio.ByteBuffer
 
@@ -399,24 +399,24 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
         if (results != null && results.size >= 3) {
             var recognition = results.get(0)
             if (recognition != null) {
-                if (recognition.title != null) recognitionTextView.text = recognition.title
-                if (recognition.confidence != null) {
-                    recognitionValueTextView.text = String.format("%.2f", (100 * recognition.confidence!!)) + "%"
+                if (recognition.getTitle() != null) recognitionTextView.text = recognition.getTitle()
+                if (recognition.getConfidence() != null) {
+                    recognitionValueTextView.text = String.format("%.2f", (100 * recognition.getConfidence()!!)) + "%"
                 }
             }
 
             var recognition1 = results.get(1)
             if (recognition1 != null) {
-                if (recognition1.title != null) recognition1TextView.text = recognition1.title
-                if (recognition1.confidence != null) {
-                    recognition1ValueTextView.text = String.format("%.2f", (100 * recognition1.confidence!!)) + "%"
+                if (recognition1.getTitle() != null) recognition1TextView.text = recognition1.getTitle()
+                if (recognition1.getConfidence() != null) {
+                    recognition1ValueTextView.text = String.format("%.2f", (100 * recognition1.getConfidence()!!)) + "%"
                 }
             }
             var recognition2 = results.get(2)
             if (recognition2 != null) {
-                if (recognition2.title != null) recognition2TextView.text = recognition2.title
-                if (recognition2.confidence != null) {
-                    recognition2ValueTextView.text = String.format("%.2f", (100 * recognition2.confidence!!)) + "%"
+                if (recognition2.getTitle() != null) recognition2TextView.text = recognition2.getTitle()
+                if (recognition2.getConfidence() != null) {
+                    recognition2ValueTextView.text = String.format("%.2f", (100 * recognition2.getConfidence()!!)) + "%"
                 }
             }
         }

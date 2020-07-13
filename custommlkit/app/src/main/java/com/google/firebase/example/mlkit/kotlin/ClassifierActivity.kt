@@ -8,7 +8,7 @@ import android.util.Size
 import android.util.TypedValue
 import com.google.firebase.example.mlkit.kotlin.env.BorderedText
 import com.google.firebase.example.mlkit.kotlin.tflite.Classifier
-import devrel.firebase.google.com.firebaseoptions.R
+import org.tensorflow.lite.examples.classification.R
 import java.io.IOException
 import java.net.URI.create
 

@@ -28,7 +28,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.google.firebase.example.mlkit.kotlin.customview.AutoFitTextureView
-import devrel.firebase.google.com.firebaseoptions.R
+import org.tensorflow.lite.examples.classification.R
 import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
