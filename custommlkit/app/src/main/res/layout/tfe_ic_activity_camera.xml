@@ -26,13 +26,12 @@
         android:orientation="vertical">
 
 
-        <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:tools="http://schemas.android.com/tools"
+        <FrameLayout
             android:id="@+id/container"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@android:color/black"
-            tools:context="org.tensorflow.lite.examples.classification.CameraActivity" />
+            tools:context="com.google.firebase.example.mlkit.kotlin.CameraActivity" />
 
 
         <androidx.appcompat.widget.Toolbar
@@ -45,7 +44,7 @@
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/tfl2_logo" />
+                android:src="@drawable/tfl2_logo"/>
         </androidx.appcompat.widget.Toolbar>
 
     </RelativeLayout>

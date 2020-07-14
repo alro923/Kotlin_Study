@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.RectF
 import android.os.SystemClock
 import android.os.Trace
+import android.util.Log
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.gpu.GpuDelegate
@@ -22,12 +23,12 @@ import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.io.IOException
 import java.nio.MappedByteBuffer
 import java.util.*
-import kotlin.Comparator
 import kotlin.collections.ArrayList
 
 
 /** A classifier specialized to label images using TensorFlow Lite.  */
 abstract class Classifier constructor(activity: Activity?, device: Device?, numThreads: Int) {
+
     enum class Device {
         CPU, GPU
     }
@@ -44,7 +45,7 @@ abstract class Classifier constructor(activity: Activity?, device: Device?, numT
 
     private var gpuDelegate: GpuDelegate? = null
 
-    protected var tflite: Interpreter? = null
+    private var tflite: Interpreter? = null
 
     private val tfliteOptions: Interpreter.Options = Interpreter.Options()
 
@@ -67,23 +68,34 @@ abstract class Classifier constructor(activity: Activity?, device: Device?, numT
              * A unique identifier for what has been recognized. Specific to the class, not the instance of
              * the object.
              */
-            val id: String?,
+            private var id: String?,
             /** Display name for the recognition.  */
-            private val title: String?,
+            private var title: String?,
             /**
              * A sortable score for how good the recognition is relative to others. Higher should be better.
              */
-            private val confidence: Float?,
+            private var confidence: Float?,
             /** Optional location within the source image for the location of the recognized object.  */
-            private var location: RectF?) {
+            private var location: RectF?)
 
-        fun getLocation(): RectF {
-            return RectF(location)
-        }
+    {
+        fun Recognition(id : String, title : String, confidence : Float, location : RectF) {
 
-        fun setLocation(location: RectF?) {
+            this.id = id
+            this.title = title
+            this.confidence = confidence
             this.location = location
         }
+
+        fun getId(): String?{ return id }
+
+        fun getTitle(): String? { return title }
+
+        fun getConfidence(): Float? { return confidence }
+
+        fun getLocation(): RectF { return RectF(this.location) }
+
+        fun setLocation(location: RectF?) { this.location = location }
 
         override fun toString(): String {
             var resultString = ""
@@ -94,24 +106,13 @@ abstract class Classifier constructor(activity: Activity?, device: Device?, numT
                 resultString += "$title "
             }
             if (confidence != null) {
-                resultString += String.format("(%.1f%%) ", confidence * 100.0f)
+                resultString += String.format("(%.1f%%) ", confidence!! * 100.0f)
             }
             if (location != null) {
                 resultString += location.toString() + " "
             }
             return resultString.trim { it <= ' ' }
         }
-
-        fun getTitle(): String? {
-            return title
-
-        }
-
-        fun getConfidence(): Float? {
-            return confidence
-        }
-
-
     }
 
     @Throws(IOException::class)
@@ -150,6 +151,7 @@ abstract class Classifier constructor(activity: Activity?, device: Device?, numT
         // Creates the post processor for the output probability.
         probabilityProcessor = TensorProcessor.Builder().add(getPostprocessNormalizeOp()).build()
 
+        Log.e("로스", "Created a Tensorflow Lite Image Classifier.")
     }
 
     /** Runs inference and returns the classification results.  */
@@ -161,6 +163,7 @@ abstract class Classifier constructor(activity: Activity?, device: Device?, numT
         inputImageBuffer = loadImage(bitmap, sensorOrientation)
         val endTimeForLoadImage = SystemClock.uptimeMillis()
         Trace.endSection()
+        Log.e("로그", "Timecost to load the image: " + (endTimeForLoadImage - startTimeForLoadImage));
 
 
         // Runs the inference call.
@@ -169,7 +172,7 @@ abstract class Classifier constructor(activity: Activity?, device: Device?, numT
         tflite!!.run(inputImageBuffer!!.getBuffer(), outputProbabilityBuffer!!.buffer.rewind())
         val endTimeForReference = SystemClock.uptimeMillis()
         Trace.endSection()
-
+        Log.e("로그", "Timecost to run model inference: " + (endTimeForReference - startTimeForReference))
 
         // Gets the map of label and probability.
         val labeledProbability = TensorLabel(labels!!, probabilityProcessor!!.process(outputProbabilityBuffer))
@@ -194,14 +197,10 @@ abstract class Classifier constructor(activity: Activity?, device: Device?, numT
     }
 
     /** Get the image size along the x axis.  */
-    open fun getImageSizeX(): Int {
-        return imageSizeX
-    }
+    open fun getImageSizeX(): Int { return imageSizeX }
 
     /** Get the image size along the y axis.  */
-    open fun getImageSizeY(): Int {
-        return imageSizeY
-    }
+    open fun getImageSizeY(): Int { return imageSizeY }
 
     /** Loads input image, and applies preprocessing.  */
     open fun loadImage(bitmap: Bitmap, sensorOrientation: Int): TensorImage {
@@ -209,12 +208,12 @@ abstract class Classifier constructor(activity: Activity?, device: Device?, numT
         inputImageBuffer!!.load(bitmap)
 
         // Creates processor for the TensorImage.
-        val cropSize = Math.min(bitmap.width, bitmap.height)
-        val numRoration = sensorOrientation / 90
+        val cropSize = bitmap.width.coerceAtMost(bitmap.height)
+        val numRotation = sensorOrientation / 90
         val imageProcessor = ImageProcessor.Builder()
                 .add(ResizeWithCropOrPadOp(cropSize, cropSize))
                 .add(ResizeOp(imageSizeX, imageSizeY, ResizeMethod.NEAREST_NEIGHBOR))
-                .add(Rot90Op(numRoration))
+                .add(Rot90Op(numRotation))
                 .add(getPreprocessNormalizeOp())
                 .build()
         return imageProcessor.process(inputImageBuffer)
@@ -225,11 +224,8 @@ abstract class Classifier constructor(activity: Activity?, device: Device?, numT
         // Find the best classifications.
         val pq: PriorityQueue<Recognition> = PriorityQueue(
                 MAX_RESULTS,
-                object : Comparator<Recognition?> {
-                    override fun compare(p0: Recognition?, p1: Recognition?): Int {
-//                        return java.lang.Float.compare(p1?.confidence!!, p0?.confidence!!)
-                        return java.lang.Float.compare(p1?.getConfidence()!!, p0?.getConfidence()!!)
-                    }
+                Comparator<Recognition?> { p0, p1 -> //                        return java.lang.Float.compare(p1?.confidence!!, p0?.confidence!!)
+                    (p1?.getConfidence()!!).compareTo(p0?.getConfidence()!!)
                 })
         for ((key, value) in labelProb) {
             pq.add(Recognition("" + key, key, value, null))

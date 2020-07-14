@@ -11,42 +11,47 @@ import android.hardware.camera2.CameraManager
 import android.media.Image.Plane
 import android.media.ImageReader
 import android.os.*
+import android.util.Log
 import android.util.Size
 import android.view.Surface
 import android.view.View
 import android.view.ViewTreeObserver
 import android.view.WindowManager
 import android.widget.*
+import androidx.annotation.RequiresApi
 import androidx.annotation.UiThread
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.firebase.example.mlkit.kotlin.env.ImageUtils.convertYUV420SPToARGB8888
 import com.google.firebase.example.mlkit.kotlin.env.ImageUtils.convertYUV420ToARGB8888
-import com.google.firebase.example.mlkit.kotlin.tflite.Classifier
+import com.google.firebase.example.mlkit.kotlin.tflite.Classifier.Device
+import com.google.firebase.example.mlkit.kotlin.tflite.Classifier.Device.CPU
+import com.google.firebase.example.mlkit.kotlin.tflite.Classifier.Device.valueOf
+import com.google.firebase.example.mlkit.kotlin.tflite.Classifier.Recognition
 import org.tensorflow.lite.examples.classification.R
-import java.lang.String
 import java.nio.ByteBuffer
 
 
 abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailableListener,
         Camera.PreviewCallback, View.OnClickListener, AdapterView.OnItemSelectedListener {
-    val PERMISSIONS_REQUEST = 1
-
-    val PERMISSION_CAMERA = Manifest.permission.CAMERA
+    private val PERMISSIONS_REQUEST = 1
+    private val PERMISSION_CAMERA = Manifest.permission.CAMERA
     var previewWidth = 0
     var previewHeight = 0
-    lateinit var handler: Handler
-    lateinit var handlerThread: HandlerThread
-    var useCamera2API = false
-    var isProcessingFrame = false
+    private var handler: Handler?  = null
+    private var handlerThread: HandlerThread? = null
+    private var useCamera2API = false
+    private var isProcessingFrame = false
     private val yuvBytes: Array<ByteArray?> = arrayOfNulls<ByteArray>(3)
-    var rgbBytes: IntArray? = null
+    private var rgbBytes: IntArray? = null
     private var yRowStride = 0
-    lateinit var postInferenceCallback: Runnable
-    lateinit var imageConverter: Runnable
-    lateinit var bottomSheetLayout : LinearLayout
-    lateinit var gestureLayout : LinearLayout
-    lateinit var sheetBehavior: BottomSheetBehavior<LinearLayout>
+    private lateinit var postInferenceCallback: Runnable
+    private lateinit var imageConverter: Runnable
+    private lateinit var bottomSheetLayout : LinearLayout
+    private lateinit var gestureLayout : LinearLayout
+    private lateinit var sheetBehavior: BottomSheetBehavior<LinearLayout>
+
     lateinit var recognitionTextView: TextView
     lateinit var recognition1TextView: TextView
     lateinit var recognition2TextView: TextView
@@ -64,26 +69,32 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
     lateinit var deviceSpinner: Spinner
     lateinit var threadsTextView: TextView
 
-    private var device = Classifier.Device.CPU
+    private var device = CPU
     var numThreads = -1
 
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.e("로그", "onCreate $this")
+
         super.onCreate(null)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.tfe_ic_activity_camera)
 
+
         if(hasPermission()){
             setFragment()
         } else{
-            requestPremission()
+            requestPermission()
         }
+
+        Log.e("로그", "got permission")
         threadsTextView = findViewById(R.id.threads)
         plusImageView = findViewById(R.id.plus)
         minusImageView = findViewById(R.id.minus)
         deviceSpinner = findViewById(R.id.device_spinner)
         bottomSheetLayout = findViewById(R.id.bottom_sheet_layout)
         gestureLayout = findViewById(R.id.gesture_layout)
-        sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout)
+        sheetBehavior = BottomSheetBehavior.from(this.bottomSheetLayout)
         bottomSheetArrowImageView = findViewById(R.id.bottom_sheet_arrow)
 
         val vto = gestureLayout.viewTreeObserver
@@ -94,7 +105,7 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
                 }else{
                     gestureLayout.viewTreeObserver.removeOnGlobalLayoutListener(this)
                 }
-
+                val width = bottomSheetLayout.measuredWidth
                 val height = gestureLayout.measuredHeight
 
                 sheetBehavior.peekHeight = height
@@ -104,8 +115,6 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
         sheetBehavior.isHideable = false
 
         sheetBehavior.setBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
-            override fun onSlide(p0: View, p1: Float) {
-            }
 
             override fun onStateChanged(p0: View, p1: Int) {
                 when (p1) {
@@ -120,10 +129,18 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
                     BottomSheetBehavior.STATE_DRAGGING -> {
                     }
                     BottomSheetBehavior.STATE_SETTLING -> bottomSheetArrowImageView.setImageResource(R.drawable.icn_chevron_up)
+                    BottomSheetBehavior.STATE_HALF_EXPANDED -> {
+                        // bottomSheetArrowImageView.setImageResource(R.drawable.icn_chevron_up)
+                    }
                 }
             }
 
+            override fun onSlide(p0: View, p1: Float) {
+            }
+
+
         })
+
 
         recognitionTextView = findViewById(R.id.detected_item)
         recognitionValueTextView = findViewById(R.id.detected_item_value)
@@ -138,16 +155,17 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
         rotationTextView = findViewById(R.id.rotation_info)
         inferenceTimeTextView = findViewById(R.id.inference_info)
 
-        deviceSpinner.setOnItemSelectedListener(this)
-        plusImageView.setOnClickListener(this);
-        minusImageView.setOnClickListener(this);
+        deviceSpinner.onItemSelectedListener = this
+        plusImageView.setOnClickListener(this)
+        minusImageView.setOnClickListener(this)
 
-        device = Classifier.Device.valueOf(deviceSpinner.getSelectedItem().toString());
-        numThreads = Integer.parseInt(threadsTextView.getText().toString().trim());
+        device = valueOf(deviceSpinner.selectedItem.toString());
+        numThreads = Integer.parseInt(threadsTextView.text.toString().trim());
     }
 
-    protected fun getRgbByte(): IntArray? {
+    protected fun getRgbBytes(): IntArray? {
         // 메소드명 겹쳐서 바꿈
+        // 원래 쓰이는데 안쓰임 확임해봐야함
         imageConverter.run()
         return rgbBytes
     }
@@ -162,30 +180,43 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
 
     override fun onPreviewFrame(data: ByteArray?, camera: Camera?) {
         if (isProcessingFrame) {
+            Log.e("로그", "Dropping frame!")
             return
         }
         try {
+            Log.e("Camera", "onPreviewFrame Try")
             if (rgbBytes == null) {
-                var previewSize: Camera.Size = camera!!.parameters.previewSize
+                val previewSize: Camera.Size = camera!!.parameters.previewSize
                 previewHeight = previewSize.height
                 previewWidth = previewSize.width
                 rgbBytes = IntArray(previewWidth * previewHeight)
                 onPreviewSizeChosen(Size(previewSize.width, previewSize.height), 90)
+                Log.e("Camera", "onPreviewFrame Try if")
             }
         } catch (e: Exception) {
+            Log.e("로그", "Exception!")
             return
         }
+
         isProcessingFrame = true
         yuvBytes[0] = data
         yRowStride = previewWidth
 
         imageConverter =
-                Runnable { convertYUV420SPToARGB8888(data!!, previewWidth, previewHeight, rgbBytes!!) }
-        postInferenceCallback = Runnable {
-            camera!!.addCallbackBuffer(data)
-            isProcessingFrame = false
+                Runnable() {
+                    @Override
+                    fun run(){
+                        convertYUV420SPToARGB8888(data!!, previewWidth, previewHeight, rgbBytes!!)
+                    } }
+        postInferenceCallback = Runnable() {
+            @Override
+            fun run(){
+                camera!!.addCallbackBuffer(data)
+                isProcessingFrame = false
+            }
         }
         processImage()
+        Log.e("로그", "onPreviewFrame process image")
     }
 
     override fun onImageAvailable(reader: ImageReader?) {
@@ -196,7 +227,9 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
             rgbBytes = IntArray(previewWidth * previewHeight)
         }
         try {
+            Log.e("Camera", "onImageAvailable")
             val image = reader?.acquireLatestImage()
+
             if (image == null) {
                 return
             }
@@ -206,32 +239,40 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
             }
             isProcessingFrame = true
             Trace.beginSection("imageAvailable")
-            var planes = image.planes
+            val planes = image.planes
             fillBytes(planes, yuvBytes)
             yRowStride = planes[0].rowStride
             val uvRowStride = planes[1].rowStride
             val uvPixelStride = planes[1].pixelStride
 
-            imageConverter = Runnable {
-                convertYUV420ToARGB8888(
-                        yuvBytes.get(0)!!,
-                        yuvBytes.get(1)!!,
-                        yuvBytes.get(2)!!,
-                        previewWidth,
-                        previewHeight,
-                        yRowStride,
-                        uvRowStride,
-                        uvPixelStride,
-                        rgbBytes!!)
+            imageConverter = Runnable() {
+                @Override
+                fun run(){
+                    convertYUV420ToARGB8888(
+                            yuvBytes.get(0)!!,
+                            yuvBytes.get(1)!!,
+                            yuvBytes.get(2)!!,
+                            previewWidth,
+                            previewHeight,
+                            yRowStride,
+                            uvRowStride,
+                            uvPixelStride,
+                            rgbBytes!!)
+                }
+
             }
 
-            postInferenceCallback = Runnable {
-                image.close()
-                isProcessingFrame = false
+            postInferenceCallback = Runnable() {
+                @Override
+                fun run(){
+                    image.close()
+                    isProcessingFrame = false
+                }
             }
 
             processImage()
         } catch (e: Exception) {
+            Log.e("로그", "Exception!")
             Trace.endSection()
             return
         }
@@ -241,56 +282,62 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
 
     @Synchronized
     override fun onStart() {
+        Log.e("로그", "onStart $this")
         super.onStart()
     }
 
     @Synchronized
     override fun onResume() {
+        Log.e("로그", "onResume $this")
         super.onResume()
         handlerThread = HandlerThread("inference")
-        handlerThread.start()
-        handler = Handler(handlerThread.looper)
+        handlerThread?.start()
+        handler = Handler(handlerThread!!.looper)
     }
 
     @Synchronized
     override fun onPause() {
-
-        handlerThread.quitSafely()
+        Log.e("로그", "onPause $this")
+        handlerThread?.quitSafely()
         try {
-            handlerThread.join()
-            handlerThread.quit()
-            handler.removeCallbacksAndMessages(null)
+            handlerThread?.join()
+            handlerThread = null
+            handler = null
             // 여기부분 처리를 잘 몰라서 이렇게 함
+            // 원래대로 null 로 처리함
         } catch (e: InterruptedException) {
-
+            Log.e("로그", "Exception!")
         }
         super.onPause()
     }
 
     @Synchronized
     override fun onStop() {
+        Log.e("로그", "onStop $this")
         super.onStop()
     }
 
     @Synchronized
     override fun onDestroy() {
+        Log.e("로그", "onDestroy $this")
         super.onDestroy()
     }
 
     @Synchronized
     protected open fun runInBackground(r: Runnable?) {
         if (handler != null) {
-            handler.post(r!!)
+            handler?.post(r!!)
         }
     }
 
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out kotlin.String>, grantResults: IntArray) {
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         if (requestCode == PERMISSIONS_REQUEST) {
             if (allPermissionsGranted(grantResults)) {
                 setFragment()
             } else {
-                requestPremission()
+                requestPermission()
             }
         }
     }
@@ -312,7 +359,7 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
         }
     }
 
-    private fun requestPremission() {
+    private fun requestPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (shouldShowRequestPermissionRationale(PERMISSION_CAMERA)) {
                 Toast.makeText(
@@ -334,7 +381,8 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
         // deviceLevel is not LEGACY, can use numerical sort
     }
 
-    private fun chooseCamera(): kotlin.String? {
+    @RequiresApi(Build.VERSION_CODES.M)
+    private fun chooseCamera(): String? {
         val manager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try {
             for (cameraId in manager.cameraIdList) {
@@ -354,26 +402,50 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
                 useCamera2API = (facing == CameraCharacteristics.LENS_FACING_EXTERNAL
                         || isHardwareLevelSupported(
                         characteristics, CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL))
-
+                Log.e("로그", "Camera API lv2? : $useCamera2API")
                 return cameraId
             }
         } catch (e: CameraAccessException) {
-
+            Log.e("로그", "Not allowed to access camera")
         }
         return null
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     protected fun setFragment() {
+        // 여기 다 없어졌넹
         var cameraId = chooseCamera()
+        var fragment : Fragment? = null
+
+        if (useCamera2API) {
+            val camera2Fragment: CameraConnectionFragment = CameraConnectionFragment.newInstance(
+                    { size : Size, rotation : Int->
+                        previewHeight = size.height
+                        previewWidth = size.width
+                        onPreviewSizeChosen(size, rotation)
+                    },
+                    this,
+                    getLayoutId(),
+                    getDesiredPreviewFrameSize())
+            camera2Fragment.setCamera(cameraId)
+            Log.e("로그", "Camera Id is $cameraId")
+            fragment = camera2Fragment
+            // 이 부분이 할당이 안 되는거 같은데 뭐지
+        } else {
+            // LegacyCameraConnectionFragment 가 Fragment 인데 mismatch 뜸
+            fragment = LegacyCameraConnectionFragment(this, getLayoutId(), getDesiredPreviewFrameSize())
+        }
+
     }
 
     protected fun fillBytes(planes: Array<Plane>, yuvBytes: Array<ByteArray?>) {
-        for (i in 0 until planes.size) {
+        for (i in planes.indices) {
             val buffer: ByteBuffer = planes[i].buffer
             if (yuvBytes[i] == null) {
+                Log.e("로그", "Initializing buffer $i at size ${buffer.capacity()}")
                 yuvBytes[i] = ByteArray(buffer.capacity())
             }
-            buffer.get(yuvBytes[i])
+            buffer.get(yuvBytes[i]!!)
         }
     }
 
@@ -395,9 +467,9 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
     }
 
     @UiThread
-    protected fun showResultsInBottomSheet(results: List<Classifier.Recognition?>?) {
-        if (results != null && results.size >= 3) {
-            var recognition = results.get(0)
+    protected fun showResultsInBottomSheet(results: List<Recognition?>?) {
+        if (!(results == null || results.size < 3)) {
+            val recognition = results.get(0)
             if (recognition != null) {
                 if (recognition.getTitle() != null) recognitionTextView.text = recognition.getTitle()
                 if (recognition.getConfidence() != null) {
@@ -405,14 +477,15 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
                 }
             }
 
-            var recognition1 = results.get(1)
+            val recognition1 = results.get(1)
             if (recognition1 != null) {
                 if (recognition1.getTitle() != null) recognition1TextView.text = recognition1.getTitle()
                 if (recognition1.getConfidence() != null) {
                     recognition1ValueTextView.text = String.format("%.2f", (100 * recognition1.getConfidence()!!)) + "%"
                 }
             }
-            var recognition2 = results.get(2)
+
+            val recognition2 = results.get(2)
             if (recognition2 != null) {
                 if (recognition2.getTitle() != null) recognition2TextView.text = recognition2.getTitle()
                 if (recognition2.getConfidence() != null) {
@@ -422,38 +495,38 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
         }
     }
 
-    protected fun showFrameInfo(frameInfo: kotlin.String) {
+    protected fun showFrameInfo(frameInfo: String) {
         frameValueTextView.text = frameInfo
     }
 
-    protected fun showCropInfo(cropInfo: kotlin.String) {
+    protected fun showCropInfo(cropInfo: String) {
         cropValueTextView.text = cropInfo
     }
 
-    protected fun showCameraResolution(cameraInfo: kotlin.String) {
+    protected fun showCameraResolution(cameraInfo: String) {
         cameraResolutionTextView.text = cameraInfo
     }
 
-    protected fun showRotationInfo(rotation: kotlin.String) {
+    protected fun showRotationInfo(rotation: String) {
         rotationTextView.text = rotation
     }
 
-    protected fun showInference(inferenceTime: kotlin.String) {
+    protected fun showInference(inferenceTime: String) {
         inferenceTimeTextView.text = inferenceTime
     }
 
-    protected fun getDevice(): Classifier.Device {
+    protected fun getDevice(): Device {
         return device
     }
 
-    private fun setDevice(device: Classifier.Device) {
+    private fun setDevice(device: Device) {
         if (this.device != device) {
-
+            Log.e("로그", "Updating device $device")
             this.device = device
-            var threadsEnabled = device == Classifier.Device.CPU
+            val threadsEnabled = device == CPU
             plusImageView.isEnabled = threadsEnabled
             minusImageView.isEnabled = threadsEnabled
-            threadsTextView.text = if (threadsEnabled) String.valueOf(numThreads) else "N/A"
+            threadsTextView.text = (if (threadsEnabled) numThreads else "N/A").toString()
             onInferenceConfigurationChanged();
         }
 
@@ -467,6 +540,7 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
     private fun setNumberThreads(numThreads: Int) {
         // 메소드명 겹쳐서 바꿈
         if (this.numThreads != numThreads) {
+            Log.e("로그","Updating numThreads: $numThreads")
             this.numThreads = numThreads
             onInferenceConfigurationChanged()
         }
@@ -480,25 +554,25 @@ abstract class CameraActivity : AppCompatActivity(), ImageReader.OnImageAvailabl
 
     override fun onClick(v: View?) {
         if (v?.id == R.id.plus) {
-            var threads = threadsTextView.text.toString().trim()
+            val threads = threadsTextView.text.toString().trim()
             var numThreads = Integer.parseInt(threads)
             if (numThreads >= 9) return
             setNumberThreads(++numThreads)
-            threadsTextView.text = String.valueOf(numThreads)
+            threadsTextView.text = numThreads.toString()
         } else if (v?.id == R.id.minus) {
-            var threads = threadsTextView.text.toString().trim()
+            val threads = threadsTextView.text.toString().trim()
             var numThreads = Integer.parseInt(threads)
             if (numThreads == 1) {
                 return
             }
             setNumberThreads(--numThreads)
-            threadsTextView.text = String.valueOf(numThreads)
+            threadsTextView.text = numThreads.toString()
         }
     }
 
     override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
         if (parent == deviceSpinner) {
-            setDevice(Classifier.Device.valueOf(parent.getItemAtPosition(position).toString()))
+            setDevice(valueOf(parent.getItemAtPosition(position).toString()))
         }
     }
 
